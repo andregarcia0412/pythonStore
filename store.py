@@ -81,6 +81,58 @@ def verify_empty_table(table):
         return True
     else:
         return False
+    
+def verify_existing_user(table, user_email):
+    cursor.execute(f"""SELECT username FROM Login WHERE email = ?""",(user_email, ))
+    count = cursor.fetchone()
+    if count == None:
+        return False
+    else:
+        return True
+    
+def main_screen():
+    logged_choice = input("1. Sell product\n2. Buy product\n3. See all offers\n4. Shopping history\n5. Cancel\n")
+    if logged_choice == "1":
+        create_announcement(get_username(user_email))
+        print("Your product was succesfully announced")
+        return_to_main = input("Type 1 to return\n")
+        if return_to_main == "1":
+            main_screen()
+    elif logged_choice == "2":
+        buy_product(user_email)
+        return_to_main = input("Type 1 to return\n")
+        if return_to_main == "1":
+            main_screen()
+    elif logged_choice == "3":
+        if verify_empty_table('sale_announcements'):
+            print("There are no items for sale")
+            return_to_main = input("Type 1 to return\n")
+            if return_to_main == "1":
+                main_screen()
+        else:
+            select_all('sale_announcements')
+            return_to_main = input("Type 1 to return\n")
+            if return_to_main == "1":
+                main_screen()
+            else:
+                print("Come back later!")
+    elif logged_choice == "4":
+        if see_shopping_history(user_email) == []:
+            print("No items in history")
+            return_to_main = input("Type 1 to return\n")
+            if return_to_main == "1":
+                main_screen()
+        else:
+            print(see_shopping_history(user_email))
+            return_to_main = input("Type 1 to return\n")
+            if return_to_main == "1":
+                main_screen()
+    elif logged_choice == "5":
+        print("Come back later!")
+        return
+    else:
+        print("Invalid option")
+        main_screen()
 
 connection_data = (
     "Driver={SQL Server};"
@@ -96,11 +148,15 @@ choice = input("1. Create account\n2. Log in\n")
 
 if choice == "1":
     username, user_email, user_password = user_create_account()
-    cursor.execute("""INSERT INTO Login(username, email, password)
-	VALUES
-		(?, ?, ?)""", (username, user_email, user_password))
-    cursor.commit()
-    print("Account created succesfully")
+    if not verify_existing_user('Login', user_email):
+        cursor.execute("""INSERT INTO Login(username, email, password)
+        VALUES
+            (?, ?, ?)""", (username, user_email, user_password))
+        cursor.commit()
+        print("Account created succesfully")
+        main_screen()
+    else:
+        print("There is an account linked to this email that already exists")
 
 elif choice == "2":
     user_email, user_password = user_login()
@@ -111,24 +167,6 @@ elif choice == "2":
     else:
         saved_password = row[0]
         if verify_password(user_password, saved_password.encode()):
-            logged_choice = input("1. Sell product\n2. Buy product\n3. See all offers\n4. Shopping history\n5. Cancel\n")
-            if logged_choice == "1":
-                create_announcement(get_username(user_email))
-                print("Your product was succesfully announced")
-            elif logged_choice == "2":
-                buy_product(user_email)
-            elif logged_choice == "3":
-                if verify_empty_table('sale_announcements'):
-                    print("There is no items for sale")
-                else:
-                    select_all('sale_announcements')
-            elif logged_choice == "4":
-                if see_shopping_history(user_email) == []:
-                    print("No items in history")
-                else:
-                    print(see_shopping_history(user_email))
-            elif logged_choice == "5":
-                print("Come back later!")
-                
+            main_screen()
         else:
             print("Incorrect password")
