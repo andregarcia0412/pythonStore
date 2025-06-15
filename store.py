@@ -1,7 +1,7 @@
 import pyodbc
 import bcrypt
 from datetime import datetime, date, timedelta
-#a ideia é fazer tipo um mercado livre
+
 def command_to_database(command: str):
     connection.cursor().execute(command)
     connection.cursor().commit()
